@@ -554,15 +554,15 @@ inline mat3 mat3_ortho(float left, float right, float bottom, float top)
     return result;
 }
 
-inline mat4 mat4_ortho(float left, float right, float bottom, float top, float near, float far)
+inline mat4 mat4_ortho(float left, float right, float bottom, float top, float nearz, float far)
 {
     mat4 result = {};
     result.m00 = 2.f/(right - left);
     result.m11 = 2.f/(top - bottom);
-    result.m22 = -2.f/(far - near);
+    result.m22 = -2.f/(far - nearz);
     result.m30 = -(right + left)/(right - left);
     result.m31 = -(top + bottom)/(top - bottom);
-    result.m32 = -(far + near)/(far - near);
+    result.m32 = -(far + nearz)/(far - nearz);
     result.m33 = 1.f;
     return result;
 }
