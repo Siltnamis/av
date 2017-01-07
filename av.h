@@ -28,6 +28,7 @@
 #if AV_PLATFORM == PLATFORM_WINDOWS
 #include <Windows.h>
 #include <winsock2.h>
+#include <ws2tcpip.h>
 #pragma comment( lib, "wsock32.lib")
 #else
 
@@ -122,7 +123,7 @@ struct Socket
     void destroy()
     {
     #if AV_PLATFORM == PLATFORM_WINDOWS
-        Closesocket(_handle); 
+        closesocket(_handle);
     #else 
         close(_handle);
     #endif
@@ -134,14 +135,22 @@ struct Socket
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = ip.ip;
         addr.sin_port = ip.port;
+    #if AV_PLATFORM == PLATFORM_WINDOWS
+        return sendto(_handle, (const char*)data, size, 0, (const sockaddr*)&addr, sizeof(addr));
+    #else
         return sendto(_handle, data, size, 0, (const sockaddr*)&addr, sizeof(addr));
+    #endif
     }
 
     int receive(void* data, int size, IPaddress* ip)
     {
         sockaddr_in addr = {};
         socklen_t len = sizeof(addr);
+    #if AV_PLATFORM == PLATFORM_WINDOWS
+        int rec = recvfrom(_handle, (char*)data, size, 0, (sockaddr*)&addr, &len);
+    #else
         int rec = recvfrom(_handle, data, size, 0, (sockaddr*)&addr, &len);
+    #endif
         ip->ip = addr.sin_addr.s_addr;
         ip->port = addr.sin_port;
         return rec;
@@ -150,7 +159,7 @@ struct Socket
     int setNonBlocking(bool nonblock)
     {
     #if AV_PLATFORM == PLATFORM_WINDOWS
-        int mode = nonblock;
+        u_long mode = nonblock;
         return ioctlsocket(_handle, FIONBIO, &mode);
     #else
         int opts = fcntl(_handle, F_GETFL);
@@ -186,7 +195,7 @@ int checkArg(int argc, char** argv, const char* argument)
 int copyFile(const char* source, const char* destination)
 {
 #if AV_PLATFORM == PLATFORM_WINDOWS
-    int result = CopyFile(src, dst, FALSE);
+    int result = CopyFileA(source, destination, FALSE);
     if(result == 0){
         return -1;
     }
@@ -234,7 +243,7 @@ exit:
 uint64 fileChangeTime(const char* path)
 {
 #if AV_PLATFORM == PLATFORM_WINDOWS
-    WIN32_FIND_DATA find_data;
+    WIN32_FIND_DATAA find_data;
     HANDLE file_handle = FindFirstFileA(path, &find_data);
     if(file_handle == INVALID_HANDLE_VALUE)
         return 0;
@@ -256,7 +265,7 @@ uint64 fileChangeTime(const char* path)
 void* loadLibrary(const char* file_name)
 {
 #if AV_PLATFORM == PLATFORM_WINDOWS
-    return LoadLibrary(file_name);
+    return LoadLibraryA(file_name);
 #else
     return dlopen(file_name, RTLD_NOW);
 #endif
@@ -278,7 +287,7 @@ int freeLibrary(void* library)
 void* getSymAddress(void* library, const char* sym_name)
 {
 #if AV_PLATFORM == PLATFORM_WINDOWS
-    void* lel = GetProcAddress((HMODULE)library, sym_name);
+    void* lel = (void*)GetProcAddress((HMODULE)library, sym_name);
     return lel;
 #else
     return dlsym(library, sym_name);
