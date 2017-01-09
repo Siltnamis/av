@@ -26,9 +26,9 @@
 
 //create custom defineS for platforms?????????
 #if AV_PLATFORM == PLATFORM_WINDOWS
-#include <Windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <Windows.h>
 #pragma comment( lib, "wsock32.lib")
 #else
 
@@ -44,7 +44,9 @@
 #endif  //platform
 
 typedef uint8_t         ubyte;
+#if AV_PLATFORM != PLATFORM_WINDOWS
 typedef int8_t          byte;
+#endif
 typedef int8_t          int8;
 typedef int16_t         int16;
 typedef int32_t         int32;
