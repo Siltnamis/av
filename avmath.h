@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define PI                      3.14159265358979323846264338327950288f
-#define AV_MATH_PI                      3.14159265358979323846264338327950288f
+#define AV_MATH_PI              3.14159265358979323846264338327950288f
 #define AV_MATH_EPSILON         1.19209290e-7f
 #define AV_MATH_ZERO            0.0f
 #define AV_MATH_ONE             1.0f
@@ -487,11 +487,83 @@ inline mat4& operator*=(mat4& ml, mat4 mr)
 inline vec4 operator*(mat4 m, vec4 v)
 {
     vec4 result;
-    result.x = m.m00*v.x + m.m01*v.y + m.m02*v.z + m.m03*v.w;
-    result.y = m.m10*v.x + m.m11*v.y + m.m12*v.z + m.m13*v.w;
-    result.z = m.m20*v.x + m.m21*v.y + m.m22*v.z + m.m23*v.w;
-    result.w = m.m30*v.x + m.m31*v.y + m.m32*v.z + m.m33*v.w;
+    result.x = m.m00*v.x + m.m10*v.y + m.m20*v.z + m.m30*v.w;
+    result.y = m.m01*v.x + m.m11*v.y + m.m21*v.z + m.m31*v.w;
+    result.z = m.m02*v.x + m.m12*v.y + m.m22*v.z + m.m32*v.w;
+    result.w = m.m03*v.x + m.m13*v.y + m.m23*v.z + m.m33*v.w;
     return result;
+}
+
+inline mat4 mat4_inverse(mat4 m)
+{
+    mat4 o;
+
+    float ood;
+    float tmp;
+
+    float sf00 = m.m22 * m.m33 - m.m32 * m.m23;
+    float sf01 = m.m21 * m.m33 - m.m31 * m.m23;
+    float sf02 = m.m21 * m.m32 - m.m31 * m.m22;
+    float sf03 = m.m20 * m.m33 - m.m30 * m.m23;
+    float sf04 = m.m20 * m.m32 - m.m30 * m.m22;
+    float sf05 = m.m20 * m.m31 - m.m30 * m.m21;
+    float sf06 = m.m12 * m.m33 - m.m32 * m.m13;
+    float sf07 = m.m11 * m.m33 - m.m31 * m.m13;
+    float sf08 = m.m11 * m.m32 - m.m31 * m.m12;
+    float sf09 = m.m10 * m.m33 - m.m30 * m.m13;
+    float sf10 = m.m10 * m.m32 - m.m30 * m.m12;
+    float sf11 = m.m11 * m.m33 - m.m31 * m.m13;
+    float sf12 = m.m10 * m.m31 - m.m30 * m.m11;
+    float sf13 = m.m12 * m.m23 - m.m22 * m.m13;
+    float sf14 = m.m11 * m.m23 - m.m21 * m.m13;
+    float sf15 = m.m11 * m.m22 - m.m21 * m.m12;
+    float sf16 = m.m10 * m.m23 - m.m20 * m.m13;
+    float sf17 = m.m10 * m.m22 - m.m20 * m.m12;
+    float sf18 = m.m10 * m.m21 - m.m20 * m.m11;
+
+    o.m00 = +(m.m11 * sf00 - m.m12 * sf01 + m.m13 * sf02);
+    o.m10 = -(m.m10 * sf00 - m.m12 * sf03 + m.m13 * sf04);
+    o.m20 = +(m.m10 * sf01 - m.m11 * sf03 + m.m13 * sf05);
+    o.m30 = -(m.m10 * sf02 - m.m11 * sf04 + m.m12 * sf05);
+
+    o.m01 = -(m.m01 * sf00 - m.m02 * sf01 + m.m03 * sf02);
+    o.m11 = +(m.m00 * sf00 - m.m02 * sf03 + m.m03 * sf04);
+    o.m21 = -(m.m00 * sf01 - m.m01 * sf03 + m.m03 * sf05);
+    o.m31 = +(m.m00 * sf02 - m.m01 * sf04 + m.m02 * sf05);
+
+    o.m02 = +(m.m01 * sf06 - m.m02 * sf07 + m.m03 * sf08);
+    o.m12 = -(m.m00 * sf06 - m.m02 * sf09 + m.m03 * sf10);
+    o.m22 = +(m.m00 * sf11 - m.m01 * sf09 + m.m03 * sf12);
+    o.m32 = -(m.m00 * sf08 - m.m01 * sf10 + m.m02 * sf12);
+
+    o.m03 = -(m.m01 * sf13 - m.m02 * sf14 + m.m03 * sf15);
+    o.m13 = +(m.m00 * sf13 - m.m02 * sf16 + m.m03 * sf17);
+    o.m23 = -(m.m00 * sf14 - m.m01 * sf16 + m.m03 * sf18);
+    o.m33 = +(m.m00 * sf15 - m.m01 * sf17 + m.m02 * sf18);
+
+    ood = 1.0f / (m.m00 * o.m00 +
+                  m.m01 * o.m10 +
+                  m.m02 * o.m20 +
+                  m.m03 * o.m30);
+
+    o.m00 *= ood;
+    o.m01 *= ood;
+    o.m02 *= ood;
+    o.m03 *= ood;
+    o.m10 *= ood;
+    o.m11 *= ood;
+    o.m12 *= ood;
+    o.m13 *= ood;
+    o.m20 *= ood;
+    o.m21 *= ood;
+    o.m22 *= ood;
+    o.m23 *= ood;
+    o.m30 *= ood;
+    o.m31 *= ood;
+    o.m32 *= ood;
+    o.m33 *= ood;
+
+    return o;
 }
 
 //==========gl related mat stuff==========
@@ -584,6 +656,11 @@ inline mat4 mat4_scale(vec3 size)
     result.m22 = size.z;
     result.m33 = 1;
     return result;
+}
+
+inline mat4 mat4_scale(float size)
+{
+    return mat4_scale(vec3{size, size, size});
 }
 
 inline mat4 mat4_rotationx(float angle)

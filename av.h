@@ -28,7 +28,7 @@
 #if AV_PLATFORM == PLATFORM_WINDOWS
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <Windows.h>
+#include <windows.h>
 #pragma comment( lib, "wsock32.lib")
 #else
 
