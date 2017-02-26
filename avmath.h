@@ -711,4 +711,17 @@ inline mat4 mat4_rotationz(float angle)
     return result;
 }
 
+inline mat4 mat4_orient(vec3 up, vec3 look)
+{
+    mat4 rot = mat4_identity();
+
+    vec3 right = cross(look, up);
+    up = cross(right, look);
+    rot.x.xyz = right;
+    rot.y.xyz = look;
+    rot.z.xyz = up;
+
+    return rot;
+}
+
 #endif //AV_MATH_HEADER
