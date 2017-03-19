@@ -1,6 +1,9 @@
 #ifndef AV_MATH_HEADER
 #define AV_MATH_HEADER
 
+//TODO: Add a SIMD support
+//TODO: Add quaternion
+
 #include <math.h>
 
 #define PI                      3.14159265358979323846264338327950288f
@@ -50,6 +53,14 @@ union vec4
     struct { vec2 xy, zw; };
     vec3 xyz;
     vec3 rgb;
+    float e[4];
+};
+
+union quat
+{
+    struct { float x, y, z, w; };
+    vec4 xyzw;
+    vec3 xyz;
     float e[4];
 };
 
@@ -286,6 +297,13 @@ inline vec3 normalize(vec3 v)
         return v/l;
     else 
         return {0.f, 0.f, 0.f};
+}
+
+inline vec3 reflect(vec3 v, vec3 n)
+{
+    vec3 r;
+    r = v - 2*(dot(v, n))*n; 
+    return r;
 }
 
 //==========Vec4 stuff==========
@@ -566,6 +584,211 @@ inline mat4 mat4_inverse(mat4 m)
     return o;
 }
 
+
+//==========quaternion stuff==========
+inline quat operator+(quat A, quat B)
+{
+    quat result;
+    result.xyzw = A.xyzw + B.xyzw; 
+    return result;
+}
+inline quat& operator+=(quat& A, quat B)
+{
+    return (A = A + B);
+}
+inline quat operator-(quat A, quat B)
+{
+    quat result;
+    result.xyzw = A.xyzw - B.xyzw;
+    return result;
+}
+inline quat& operator-=(quat& A, quat B)
+{
+    return (A = A - B);
+}
+inline quat operator-(quat q)
+{
+    quat result;
+    result.xyzw = -q.xyzw;
+    return result;
+}
+
+inline quat operator*(quat A, quat B)
+{
+    quat result;
+    result.x = A.w * B.x + A.x * B.w + A.y * B.z - A.z * B.y;
+	result.y = A.w * B.y - A.x * B.z + A.y * B.w + A.z * B.x;
+	result.z = A.w * B.z + A.x * B.y - A.y * B.x + A.z * B.w;
+	result.w = A.w * B.w - A.x * B.x - A.y * B.y - A.z * B.z;
+    return result;
+}
+
+inline quat& operator*=(quat& A, quat B)
+{
+    return (A = A*B);
+}
+
+inline quat conjugate(quat q)
+{
+    q.xyz = -q.xyz;
+    return q;
+}               
+                
+inline quat operator/(quat q, float scalar)
+{
+    quat result;
+    result.xyzw = q.xyzw / scalar;
+    return result;
+}
+
+inline quat& operator/=(quat& q, float scalar)
+{
+    return (q = q/scalar);
+}
+
+inline float dot(quat A, quat B)
+{
+    return dot(A.xyzw, B.xyzw);
+}
+
+inline quat quat_inverse(quat q)
+{
+    return conjugate(q)/dot(q, q);
+}
+
+inline quat operator/(quat A, quat B)
+{
+    return(quat_inverse(B)*A);
+}
+
+inline quat& operator/=(quat& A, quat B)
+{
+    return (A = A/B);
+}
+               
+inline quat operator*(quat q, float scalar)
+{
+    quat result;
+    result.xyzw = q.xyzw * scalar;
+    return result;
+}
+inline quat operator*(float scalar, quat q)
+{
+    quat result;
+    result.xyzw = q.xyzw * scalar;
+    return result;
+}
+
+inline quat& operator*=(quat& q, float scalar)
+{
+    return (q = q*scalar);
+}
+
+
+inline float length(quat q)
+{
+    return length(q.xyzw);
+}
+
+inline quat normalize(quat q)
+{
+    float l = length(q);
+    if(l > 0)
+        return q/l;
+    else 
+        return {0.f, 0.f, 0.f, 0.f};
+}
+
+inline quat quat_identity()
+{
+    return quat{0, 0, 0, 1};
+}
+
+
+inline quat quat_axis_angle(vec3 axis, float angle)
+{
+    quat q;
+    q.xyz = normalize(axis);
+    q.xyz *= sinf(angle/2.f);
+    q.w = cosf(angle/2.f);
+    return q;
+}
+
+/*
+inline quat quat_euler_angles(float yaw, float pitch, float roll)
+{
+    //assert(false);
+    quat result;
+#if 1
+#if 1
+    float t0 = cos(yaw/2.f); 
+    float t1 = sin(yaw/2.f); 
+    float t2 = cos(roll/2.f); 
+    float t3 = sin(roll/2.f); 
+    float t4 = cos(pitch/2.f); 
+    float t5 = sin(pitch/2.f); 
+
+    result.w = t0*t2*t4 + t1*t3*t5;
+    result.x = t0*t3*t4 - t1*t2*t5;
+    result.y = t0*t2*t5 + t1*t3*t4;
+    result.z = t1*t2*t4 - t0*t3*t5;
+#else
+    vec3 c;
+    c.x = cosf(pitch/2.f);
+    c.y = cosf(yaw/2.f);
+    c.z = cosf(roll/2.f);
+
+    vec3 s;
+    s.x = sinf(pitch/2.f);
+    s.y = sinf(yaw/2.f);
+    s.z = sinf(roll/2.f);
+
+    result.w = c.x * c.y * c.z + s.x * s.y * s.z;
+    result.x = s.x * c.y * c.z - c.x * s.y * s.z;
+    result.y = c.x * s.y * c.z + s.x * c.y * s.z;
+    result.z = c.x * c.y * s.z - s.x * s.y * c.z;
+
+
+#endif
+#else
+    quat p = quat_axis_angle({1, 0, 0}, pitch);
+    quat y = quat_axis_angle({0, 1, 0}, yaw);
+    quat r = quat_axis_angle({0, 0, 1}, roll);
+    result = y*p*r;
+    result = normalize(result);
+#endif
+    result = normalize(result);
+    return result; 
+}
+*/
+
+inline mat4 quat_to_mat4(quat q)
+{
+    mat4 result = mat4_identity();
+    q = normalize(q);
+    float xx, yy, zz, xy, xz, yz, wx, wy, wz;
+    xx = q.x*q.x; yy = q.y*q.y; zz = q.z*q.z;
+    xy = q.x*q.y; xz = q.x*q.z; yz = q.y*q.z;
+    wx = q.w*q.x; wy = q.w*q.y; wz = q.w*q.z;
+
+    result.m00 = 1.f - 2.f*(yy + zz);
+    result.m01 = 2.f*(xy + wz);
+    result.m02 = 2.f*(xz - wy);
+
+    result.m10 = 2.f*(xy - wz);
+    result.m11 = 1.f - 2.f*(xx + zz);
+    result.m12 = 2.f*(yz + wz);
+
+    result.m20 = 2.f*(xz + wy);
+    result.m21 = 2.f*(yz - wx);
+    result.m22 = 1.f - 2.f*(xx + yy);
+    
+    return result;
+};
+
+
+
+
 //==========gl related mat stuff==========
 inline mat4 look_at(vec3 eye, vec3 center, vec3 up)
 {
@@ -711,17 +934,19 @@ inline mat4 mat4_rotationz(float angle)
     return result;
 }
 
-inline mat4 mat4_orient(vec3 up, vec3 look)
+inline mat4 mat4_orient(vec3 look, vec3 up)
 {
     mat4 rot = mat4_identity();
 
     vec3 right = cross(look, up);
     up = cross(right, look);
-    rot.x.xyz = right;
-    rot.y.xyz = look;
-    rot.z.xyz = up;
+    rot.x.xyz = normalize(right);
+    rot.y.xyz = normalize(look);
+    rot.z.xyz = normalize(up);
 
     return rot;
 }
+
+
 
 #endif //AV_MATH_HEADER
