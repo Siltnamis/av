@@ -777,7 +777,7 @@ inline mat4 quat_to_mat4(quat q)
 
     result.m10 = 2.f*(xy - wz);
     result.m11 = 1.f - 2.f*(xx + zz);
-    result.m12 = 2.f*(yz + wz);
+    result.m12 = 2.f*(yz + wx);
 
     result.m20 = 2.f*(xz + wy);
     result.m21 = 2.f*(yz - wx);
