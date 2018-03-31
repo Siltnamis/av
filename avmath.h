@@ -1,6 +1,4 @@
-#ifndef AV_MATH_HEADER
-#define AV_MATH_HEADER
-
+#pragma once
 //TODO: Add a SIMD support
 //TODO: Add quaternion
 
@@ -999,7 +997,3 @@ inline mat4 mat4_orient(vec3 look, vec3 up)
 
     return rot;
 }
-
-
-
-#endif //AV_MATH_HEADER
