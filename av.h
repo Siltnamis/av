@@ -1,5 +1,4 @@
-#ifndef AV_LIB_H
-#define AV_LIB_H
+#pragma once
 
 #define PLATFORM_LINUX 1
 #define PLATFORM_APPLE 2
@@ -354,5 +353,4 @@ int strToInt(const char* str) //unsafe? callers problem to pass \0 strs?
     
     return result;
 }
-#endif //AV_LIB_IMPLEMENTATION
-#endif //AV_LIB_H
+#endif
