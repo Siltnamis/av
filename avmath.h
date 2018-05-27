@@ -6,6 +6,9 @@
 
 #include <math.h>
 
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
+
 #define PI                      3.14159265358979323846264338327950288f
 #define AV_MATH_PI              3.14159265358979323846264338327950288f
 #define AV_MATH_EPSILON         1.19209290e-7f
@@ -55,6 +58,15 @@ union vec4
     vec3 rgb;
     float e[4];
 };
+
+/*inline vec4 vec4(vec3 v, float w)
+{
+    vec4 result;
+    result.xyz = v;
+    result.w = w;
+    return result;
+}
+*/
 
 union quat
 {
@@ -258,6 +270,16 @@ inline vec3& operator*=(vec3& v, float scalar)
 {
     return (v = v*scalar);
 }
+
+inline vec3 operator*(vec3 A, vec3 B)
+{
+    vec3 result;
+    result.x = A.x*B.x;
+    result.y = A.y*B.y;
+    result.z = A.z*B.z;
+    return result;
+}
+
 inline vec3 operator/(vec3 v, float scalar)
 {
     vec3 result;
@@ -762,6 +784,43 @@ inline quat quat_euler_angles(float yaw, float pitch, float roll)
 }
 */
 
+inline quat slerp(quat q, quat r, float t)
+{
+ float cos_half_theta = dot (q, r);
+	// as found here http://stackoverflow.com/questions/2886606/flipping-issue-when-interpolating-rotations-using-quaternions
+	// if dot product is negative then one quaternion should be negated, to make
+	// it take the short way around, rather than the long way
+	// yeah! and furthermore Susan, I had to recalculate the d.p. after this
+	if (cos_half_theta < 0.0f) {
+		for (int i = 0; i < 4; i++) {
+			q.e[i] *= -1.0f;
+		}
+		cos_half_theta = dot (q, r);
+	}
+	// if qa=qb or qa=-qb then theta = 0 and we can return qa
+	if (fabs (cos_half_theta) >= 1.0f) {
+		return q;
+	}
+	// Calculate temporary values
+	float sin_half_theta = sqrt (1.0f - cos_half_theta * cos_half_theta);
+	// if theta = 180 degrees then result is not fully defined
+	// we could rotate around any axis normal to qa or qb
+	quat result;
+	if (fabs (sin_half_theta) < 0.001f) {
+		for (int i = 0; i < 4; i++) {
+			result.e[i] = (1.0f - t) * q.e[i] + t * r.e[i];
+		}
+		return result;
+	}
+	float half_theta = acos (cos_half_theta);
+	float a = sin ((1.0f - t) * half_theta) / sin_half_theta;
+	float b = sin (t * half_theta) / sin_half_theta;
+	for (int i = 0; i < 4; i++) {
+		result.e[i] = q.e[i] * a + r.e[i] * b;
+	}
+	return result;   
+}
+
 inline mat4 quat_to_mat4(quat q)
 {
     mat4 result = mat4_identity();
@@ -849,15 +908,15 @@ inline mat3 mat3_ortho(float left, float right, float bottom, float top)
     return result;
 }
 
-inline mat4 mat4_ortho(float left, float right, float bottom, float top, float nearz, float far)
+inline mat4 mat4_ortho(float left, float right, float bottom, float top, float nearz, float farz)
 {
     mat4 result = {};
     result.m00 = 2.f/(right - left);
     result.m11 = 2.f/(top - bottom);
-    result.m22 = -2.f/(far - nearz);
+    result.m22 = -2.f/(farz - nearz);
     result.m30 = -(right + left)/(right - left);
     result.m31 = -(top + bottom)/(top - bottom);
-    result.m32 = -(far + nearz)/(far - nearz);
+    result.m32 = -(farz + nearz)/(farz - nearz);
     result.m33 = 1.f;
     return result;
 }
