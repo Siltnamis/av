@@ -1,6 +1,4 @@
-#ifndef AV_MATH_HEADER
-#define AV_MATH_HEADER
-
+#pragma once
 //TODO: Add a SIMD support
 //TODO: Add quaternion
 
@@ -787,24 +785,18 @@ inline quat quat_euler_angles(float yaw, float pitch, float roll)
 inline quat slerp(quat q, quat r, float t)
 {
  float cos_half_theta = dot (q, r);
-	// as found here http://stackoverflow.com/questions/2886606/flipping-issue-when-interpolating-rotations-using-quaternions
-	// if dot product is negative then one quaternion should be negated, to make
-	// it take the short way around, rather than the long way
-	// yeah! and furthermore Susan, I had to recalculate the d.p. after this
 	if (cos_half_theta < 0.0f) {
 		for (int i = 0; i < 4; i++) {
 			q.e[i] *= -1.0f;
 		}
 		cos_half_theta = dot (q, r);
 	}
-	// if qa=qb or qa=-qb then theta = 0 and we can return qa
 	if (fabs (cos_half_theta) >= 1.0f) {
 		return q;
 	}
-	// Calculate temporary values
+
 	float sin_half_theta = sqrt (1.0f - cos_half_theta * cos_half_theta);
-	// if theta = 180 degrees then result is not fully defined
-	// we could rotate around any axis normal to qa or qb
+
 	quat result;
 	if (fabs (sin_half_theta) < 0.001f) {
 		for (int i = 0; i < 4; i++) {
@@ -1005,7 +997,3 @@ inline mat4 mat4_orient(vec3 look, vec3 up)
 
     return rot;
 }
-
-
-
-#endif //AV_MATH_HEADER
