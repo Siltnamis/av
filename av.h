@@ -1,5 +1,4 @@
-#ifndef AV_LIB_H
-#define AV_LIB_H
+#pragma once
 
 #define PLATFORM_LINUX 1
 #define PLATFORM_APPLE 2
@@ -26,6 +25,7 @@
 
 //create custom defineS for platforms?????????
 #if AV_PLATFORM == PLATFORM_WINDOWS
+#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <windows.h>
@@ -42,6 +42,8 @@
 //#include <netdb.h>
 
 #endif  //platform
+#undef max
+#undef min
 
 typedef uint8_t         ubyte;
 #if AV_PLATFORM != PLATFORM_WINDOWS
@@ -354,5 +356,4 @@ int strToInt(const char* str) //unsafe? callers problem to pass \0 strs?
     
     return result;
 }
-#endif //AV_LIB_IMPLEMENTATION
-#endif //AV_LIB_H
+#endif
